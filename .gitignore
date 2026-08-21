@@ -1,0 +1,7 @@
+# Build
+compile_commands.json
+build/
+
+# VS Code
+.vscode
+*.code-workspace
