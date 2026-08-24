@@ -1,11 +1,12 @@
 #ifndef MMD_H
 #define MMD_H
 
+#include "mmd_ioctl.h"
+
 #include <fcntl.h>
 #include <unistd.h>
 #include <sys/ioctl.h>
 #include <string.h>
-#include <mmd_ioctl.h>
 #include <cerrno>
 
 void __get_device(char *dev) {
