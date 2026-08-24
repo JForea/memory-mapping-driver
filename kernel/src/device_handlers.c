@@ -39,6 +39,8 @@ long mmd_ioctl(struct file *filep, unsigned int cmd, unsigned long arg) {
 			return err;
 		}
 
+		printk(KERN_INFO "MMD: MMD_ALLOC executed succesfully.\n");
+
 		return 0;
 	}
 
@@ -52,6 +54,8 @@ long mmd_ioctl(struct file *filep, unsigned int cmd, unsigned long arg) {
 		if (err < 0) {
 			return err;
 		}
+
+		printk(KERN_INFO "MMD: MMD_FREE executed succesfully.\n");
 
 		return 0;
 	}

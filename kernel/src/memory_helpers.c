@@ -93,6 +93,8 @@ int mem_allocate(unsigned long addr) {
         entry = pfn_pte(pfn, PAGE_SHARED);
         set_pte_at(mm, addr, pte, entry);
     // }
+
+    printk(KERN_INFO "PTE = 0x%lx\n", pte_val(*pte));
     
     return 0;
 }
