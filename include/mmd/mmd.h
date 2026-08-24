@@ -51,6 +51,7 @@ int mem_allocate(unsigned long addr, unsigned int len) {
     }
 
     close(fd);
+    return 0;
 }
 
 int mem_free(unsigned long addr, unsigned int len) {
@@ -74,6 +75,7 @@ int mem_free(unsigned long addr, unsigned int len) {
     }
 
     close(fd);
+    return 0;
 }
 
 #endif
