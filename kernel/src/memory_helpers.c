@@ -57,7 +57,7 @@ int mem_allocate(unsigned long addr) {
 
     printk(KERN_INFO "MMD: before P4D.\n");
 
-    p4d = p4d_offset(mm, addr);
+    p4d = p4d_offset(pgd, addr);
     if (p4d_none(*p4d)) {
         printk(KERN_INFO "MMD: P4D none.\n");
         err = kmalloc_phys(&phys, PAGE_SIZE, GFP_KERNEL);
