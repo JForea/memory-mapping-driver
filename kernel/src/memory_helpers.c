@@ -74,16 +74,12 @@ int mem_allocate(unsigned long addr) {
         return -EFAULT;
 
     pte = pte_offset_kernel(pmd, addr);
-    if (pte_none(*pte)) {
-        err = kmalloc_phys(&phys, PAGE_SIZE, GFP_KERNEL);
-        if (err)
-            return err;
+    
+    err = kmalloc_phys(&phys, PAGE_SIZE, GFP_KERNEL);
+    if (err)
+        return err;
 
-        set_pte(pte, __pte(phys | _PAGE_TABLE));
-    }
-
-    if (pte_bad(*pte))
-        return -EFAULT;
+    set_pte(pte, __pte(phys | _PAGE_TABLE));
 
     // len = PAGE_ALIGN(len);
     // page_count = len / PAGE_SIZE;
