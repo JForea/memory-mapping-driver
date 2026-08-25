@@ -11,7 +11,7 @@
 static int kmalloc_phys(phys_addr_t *phys, unsigned long sz, gfp_t gfp) {
     void *virt;
     
-    virt = kmalloc(sz, gfp);
+    virt = kzalloc(sz, gfp);
     if (!virt) {
         return -ENOMEM;
     }
