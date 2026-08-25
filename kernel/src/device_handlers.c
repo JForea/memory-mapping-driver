@@ -23,7 +23,7 @@ int mmd_open(struct inode *inodep, struct file *filep) {
 
 long mmd_ioctl(struct file *filep, unsigned int cmd, unsigned long arg) { 
 	mmd_args args = {};
-	unsigned long err = 0;
+	int err = 0;
 
 	printk(KERN_INFO "MMD: IOCTL command received - CMD: %u ARG: %lu.\n", cmd, arg);
 

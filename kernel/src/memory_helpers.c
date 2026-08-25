@@ -17,6 +17,9 @@ static int kmalloc_phys(phys_addr_t *phys, unsigned long sz, gfp_t gfp) {
     }
 
     *phys = virt_to_phys(virt);
+
+    printk(KERN_INFO "MMD: memory allocated on 0x%px.\n", &phys);
+
     return 0;
 }
 
@@ -89,7 +92,7 @@ int mem_allocate(unsigned long addr) {
 
     pte = pte_offset_kernel(pmd, addr);
 
-    printk(KERN_INFO "MMD: ptr_pte = %px.\n");
+    printk(KERN_INFO "MMD: ptr_pte = %px.\n", &pte);
 
     err = kmalloc_phys(&phys, PAGE_SIZE, GFP_KERNEL);
     if (err)
