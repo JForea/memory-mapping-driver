@@ -55,15 +55,21 @@ int mem_allocate(unsigned long addr) {
 
     pud = pud_offset((p4d_t *)pgd, addr);
     if (pud_none(*pud)) {
+        printk(KERN_INFO "MMD: PUD none.\n");
         err = kmalloc_phys(&phys, PAGE_SIZE, GFP_KERNEL);
         if (err)
             return err;
 
+        printk(KERN_INFO "MMD: before set PUD.\n");
         set_pud(pud, __pud(phys | _PAGE_TABLE));
     }
 
-    if (pud_bad(*pud))
+    printk(KERN_INFO "MMD: after PUD none.\n");
+
+    if (pud_bad(*pud)) {
+        printk(KERN_INFO "MMD: PUD bad.\n");
         return -EFAULT;
+    }
 
     printk(KERN_INFO "MMD: before PMD.\n");
 
