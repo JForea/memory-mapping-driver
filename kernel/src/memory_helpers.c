@@ -26,6 +26,7 @@ static int kmalloc_phys(phys_addr_t *phys, unsigned long sz, gfp_t gfp) {
 int mem_allocate(unsigned long addr) {
     struct mm_struct *mm;
     pgd_t *pgd;
+    p4d_t *p4d;
     pud_t *pud;
     pmd_t *pmd;
     pte_t *pte;
@@ -54,9 +55,30 @@ int mem_allocate(unsigned long addr) {
     if (pgd_bad(*pgd))
         return -EFAULT;
 
+    printk(KERN_INFO "MMD: before P4D.\n");
+
+    p4d = p4d_offset(mm, addr);
+    if (p4d_none(*p4d)) {
+        printk(KERN_INFO "MMD: P4D none.\n");
+        err = kmalloc_phys(&phys, PAGE_SIZE, GFP_KERNEL);
+        if (err)
+            return err;
+
+        printk(KERN_INFO "MMD: before P4D set.\n");
+        
+        set_p4d(p4d, __p4d(phys | _PAGE_TABLE));
+    }
+
+    printk(KERN_INFO "MMD: after p4d none.\n");
+
+    if (p4d_bad(*p4d)) {
+        printk(KERN_INFO "MMD: P4D bad.\n");
+        return err;
+    }
+
     printk(KERN_INFO "MMD: before PUD.\n");
 
-    pud = pud_offset((p4d_t *)pgd, addr);
+    pud = pud_offset(p4d, addr);
     if (pud_none(*pud)) {
         printk(KERN_INFO "MMD: PUD none.\n");
         err = kmalloc_phys(&phys, PAGE_SIZE, GFP_KERNEL);
