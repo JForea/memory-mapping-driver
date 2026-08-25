@@ -74,15 +74,15 @@ int mem_allocate(unsigned long addr) {
         return -EFAULT;
 
     pte = pte_offset_kernel(pmd, addr);
-    if (pmd_none(*pmd)) {
+    if (pte_none(*pte)) {
         err = kmalloc_phys(&phys, PAGE_SIZE, GFP_KERNEL);
         if (err)
             return err;
 
-        set_pmd(pmd, __pmd(phys | _PAGE_TABLE));
+        set_pte(pte, __pte(phys | _PAGE_TABLE));
     }
 
-    if (pmd_bad(*pmd))
+    if (pte_bad(*pte))
         return -EFAULT;
 
     // len = PAGE_ALIGN(len);
@@ -94,7 +94,7 @@ int mem_allocate(unsigned long addr) {
         set_pte_at(mm, addr, pte, entry);
     // }
 
-    printk(KERN_INFO "PTE = 0x%lx\n", pte_val(*pte));
+    printk(KERN_INFO "MMD: PTE = 0x%lx\n", pte_val(*pte));
     
     return 0;
 }
