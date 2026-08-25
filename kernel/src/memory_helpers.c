@@ -37,6 +37,8 @@ int mem_allocate(unsigned long addr) {
     // if (!len)
 	// 	return -EINVAL;
 
+    printk(KERN_INFO "MMD: before PGD.\n");
+
     pgd = pgd_offset(mm, addr);
     if (pgd_none(*pgd)) {
         err = kmalloc_phys(&phys, PAGE_SIZE, GFP_KERNEL);
@@ -48,6 +50,8 @@ int mem_allocate(unsigned long addr) {
 
     if (pgd_bad(*pgd))
         return -EFAULT;
+
+    printk(KERN_INFO "MMD: before PUD.\n");
 
     pud = pud_offset((p4d_t *)pgd, addr);
     if (pud_none(*pud)) {
@@ -61,6 +65,8 @@ int mem_allocate(unsigned long addr) {
     if (pud_bad(*pud))
         return -EFAULT;
 
+    printk(KERN_INFO "MMD: before PMD.\n");
+
     pmd = pmd_offset(pud, addr);
     if (pmd_none(*pmd)) {
         err = kmalloc_phys(&phys, PAGE_SIZE, GFP_KERNEL);
@@ -73,11 +79,17 @@ int mem_allocate(unsigned long addr) {
     if (pmd_bad(*pmd))
         return -EFAULT;
 
+    printk(KERN_INFO "MMD: before PTE.\n");
+
     pte = pte_offset_kernel(pmd, addr);
-    
+
+    printk(KERN_INFO "MMD: ptr_pte = %px.\n");
+
     err = kmalloc_phys(&phys, PAGE_SIZE, GFP_KERNEL);
     if (err)
         return err;
+
+    printk(KERN_INFO "MMD: before PTE set.\n");
 
     set_pte(pte, __pte(phys | _PAGE_TABLE));
 
