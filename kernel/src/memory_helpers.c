@@ -129,18 +129,20 @@ int mem_allocate(unsigned long addr, unsigned long len) {
         pte = pte_offset_kernel(pmd, addr);
 
         printk(KERN_INFO "MMD: ptr_pte = %px.\n", &pte);
+        if (pte_none(*pte)) {
+            err = kmalloc_phys(&phys, PAGE_SIZE, GFP_KERNEL);
+            if (err)
+                return err;
 
-        err = kmalloc_phys(&phys, PAGE_SIZE, GFP_KERNEL);
-        if (err)
-            return err;
+            printk(KERN_INFO "MMD: before PTE set.\n");
 
-        printk(KERN_INFO "MMD: before PTE set.\n");
-
-        set_pte(pte, __pte(phys | _PAGE_TABLE));
+            set_pte(pte, __pte(phys | _PAGE_TABLE));
+        }
 
         pfn = PHYS_PFN(phys);
         entry = pfn_pte(pfn, PAGE_SHARED);
-        set_pte_at(mm, addr, pte, entry);
+        if (pte_none(entry))
+            set_pte_at(mm, addr, pte, entry);
 
         printk(KERN_INFO "MMD: PTE = 0x%lx\n", pte_val(*pte));
 
