@@ -66,6 +66,8 @@ int mem_allocate(unsigned long addr, unsigned long len) {
             set_pgd(pgd, __pgd(phys | _PAGE_TABLE));
         }
 
+        *(unsigned long *)pgd |= 1 << 2;
+
         if (pgd_bad(*pgd))
             return -EFAULT;
 
@@ -82,6 +84,8 @@ int mem_allocate(unsigned long addr, unsigned long len) {
             
             set_p4d(p4d, __p4d(phys | _PAGE_TABLE));
         }
+
+        *(unsigned long *)p4d |= 1 << 2;
 
         printk(KERN_INFO "MMD: after p4d none.\n");
 
@@ -103,6 +107,8 @@ int mem_allocate(unsigned long addr, unsigned long len) {
             set_pud(pud, __pud(phys | _PAGE_TABLE));
         }
 
+        *(unsigned long *)pud |= 1 << 2;
+
         printk(KERN_INFO "MMD: after PUD none.\n");
 
         if (pud_bad(*pud)) {
@@ -121,6 +127,8 @@ int mem_allocate(unsigned long addr, unsigned long len) {
             set_pmd(pmd, __pmd(phys | _PAGE_TABLE));
         }
 
+        *(unsigned long *)pmd |= 1 << 2;
+
         if (pmd_bad(*pmd))
             return -EFAULT;
 
@@ -138,6 +146,8 @@ int mem_allocate(unsigned long addr, unsigned long len) {
 
             set_pte(pte, __pte(phys | _PAGE_TABLE));
         }
+
+        *(unsigned long *)pte |= 1 << 2;
 
         pfn = PHYS_PFN(phys);
         entry = pfn_pte(pfn, PAGE_SHARED);
