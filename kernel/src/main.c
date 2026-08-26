@@ -34,7 +34,6 @@ static char *fad_devnode(const struct device *dev, umode_t *mode) {
 }
 
 static int __init mmd_init(void) {
-    int err;
     struct device *dev;
 
     major = register_chrdev(0, DEVICE_NAME, &fops);
