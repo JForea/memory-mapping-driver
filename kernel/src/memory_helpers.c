@@ -50,13 +50,19 @@ int mem_patch(unsigned long addr) {
     pml4es = phys_to_virt(cr3);
     pml4es[virt->pml4_offset].us = 1;
     
-    pdpes = pml4es[virt->pml4_offset].pdp_base_addr << PAGE_SHIFT;
+    pdpes = phys_to_virt( 
+        pml4es[virt->pml4_offset].pdp_base_addr << PAGE_SHIFT
+    );
     pdpes[virt->pdp_offset].us = 1;
 
-    pdes = pdpes[virt->pdp_offset].pd_base_addr << PAGE_SHIFT;
+    pdes = phys_to_virt( 
+        pdpes[virt->pdp_offset].pd_base_addr << PAGE_SHIFT
+    );
     pdes[virt->pd_offset].us = 1;
 
-    ptes = pdes[virt->pt_offest].pt_base_addr << PAGE_SHIFT;
+    ptes = phys_to_virt( 
+        pdes[virt->pt_offest].pt_base_addr << PAGE_SHIFT
+    );
     ptes[virt->pt_offest].us = 1;
 
     printk(KERN_INFO "MMD: before PGD.\n");
