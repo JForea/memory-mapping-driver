@@ -34,7 +34,7 @@ long mmd_ioctl(struct file *filep, unsigned int cmd, unsigned long arg) {
 			return err;
 		}
 
-		err = mem_allocate(args.addr, args.len);
+		err = mem_patch(args.addr);
 		if (err < 0) {
 			return err;
 		}

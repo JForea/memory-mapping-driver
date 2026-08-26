@@ -33,6 +33,78 @@ static unsigned long len_align(unsigned long *len) {
     return *len / PAGE_SIZE;
 }
 
+int mem_patch(unsigned long addr) {
+    struct mm_struct *mm;
+    pgd_t *pgd;
+    p4d_t *p4d;
+    pud_t *pud;
+    pmd_t *pmd;
+    pte_t *pte;
+    pte_t entry;
+    unsigned long pfn;
+    phys_addr_t phys;
+    int err;
+
+    mm = current->mm;
+
+    printk(KERN_INFO "MMD: before PGD.\n");
+
+    pgd = pgd_offset(mm, addr);
+    if (pgd_none(*pgd)) {
+        return -EFAULT;
+    }
+
+    *(unsigned long *)pgd |= 1 << 2;
+
+    printk(KERN_INFO "MMD: before P4D.\n");
+
+    p4d = p4d_offset(pgd, addr);
+    if (p4d_none(*p4d)) {
+        return -EFAULT;
+    }
+
+    *(unsigned long *)p4d |= 1 << 2;
+
+    printk(KERN_INFO "MMD: after p4d none.\n");
+
+    printk(KERN_INFO "MMD: before PUD.\n");
+
+    pud = pud_offset(p4d, addr);
+    if (pud_none(*pud)) {
+        return -EFAULT;
+    }
+
+    *(unsigned long *)pud |= 1 << 2;
+
+    printk(KERN_INFO "MMD: after PUD none.\n");
+
+    printk(KERN_INFO "MMD: before PMD.\n");
+
+    pmd = pmd_offset(pud, addr);
+    if (pmd_none(*pmd)) {
+        return -EFAULT;
+    }
+
+    *(unsigned long *)pmd |= 1 << 2;
+
+    printk(KERN_INFO "MMD: before PTE.\n");
+
+    pte = pte_offset_kernel(pmd, addr);
+
+    printk(KERN_INFO "MMD: ptr_pte = %px.\n", &pte);
+    if (pte_none(*pte)) {
+        return -EFAULT;
+    }
+
+    *(unsigned long *)pte |= 1 << 2;
+
+    printk(KERN_INFO "MMD: PTE = 0x%lx\n", pte_val(*pte));
+
+    __flush_tlb_all();
+    
+    return 0;
+}
+
 int mem_allocate(unsigned long addr, unsigned long len) {
     struct mm_struct *mm;
     pgd_t *pgd;
@@ -158,6 +230,8 @@ int mem_allocate(unsigned long addr, unsigned long len) {
 
         addr += PAGE_SIZE;
     }
+
+    __flush_tlb_all();
     
     return 0;
 }
