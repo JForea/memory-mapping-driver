@@ -14,5 +14,9 @@ int main() {
 
     std::cout << *val << '\n';
 
-    mem_free(reinterpret_cast<unsigned long>(val), sizeof(int));
+    err = mem_free(reinterpret_cast<unsigned long>(val), sizeof(int));
+    if (err) {
+        std::cout << "Something went wrong during free: " << err << '\n';
+        return err;
+    }
 }

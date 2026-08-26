@@ -10,7 +10,7 @@ int main() {
     int *val = nullptr;
     int err = mem_allocate(reinterpret_cast<unsigned long>(val), allocSize);
     if (err < 0) {
-        std::cout << "Something went wrong: " << err << '\n';
+        std::cout << "Something went wrong during alloc: " << err << '\n';
         return err;
     }
 
@@ -37,5 +37,9 @@ int main() {
     std::cout << std::endl <<
         *val << std::endl;
 
-    mem_free(reinterpret_cast<unsigned long>(nullptr), allocSize);
+    err = mem_free(reinterpret_cast<unsigned long>(nullptr), allocSize);
+    if (err) {
+        std::cout << "Something went wrong during free: " << err << '\n';
+        return err;
+    }
 }
