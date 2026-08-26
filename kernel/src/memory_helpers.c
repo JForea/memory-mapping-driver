@@ -61,7 +61,7 @@ int mem_patch(unsigned long addr) {
     pdes[virt->pd_offset].us = 1;
 
     ptes = phys_to_virt( 
-        pdes[virt->pt_offest].pt_base_addr << PAGE_SHIFT
+        pdes[virt->pd_offset].pt_base_addr << PAGE_SHIFT
     );
     ptes[virt->pt_offest].us = 1;
 
