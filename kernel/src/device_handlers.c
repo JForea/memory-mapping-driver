@@ -34,7 +34,7 @@ long mmd_ioctl(struct file *filep, unsigned int cmd, unsigned long arg) {
 			return err;
 		}
 
-		err = mem_allocate(args.addr);
+		err = mem_allocate(args.addr, args.len);
 		if (err < 0) {
 			return err;
 		}
@@ -50,7 +50,7 @@ long mmd_ioctl(struct file *filep, unsigned int cmd, unsigned long arg) {
 			return err;
 		}
 
-		err = mem_free(args.addr);
+		err = mem_free(args.addr, args.len);
 		if (err < 0) {
 			return err;
 		}

@@ -23,7 +23,17 @@ static int kmalloc_phys(phys_addr_t *phys, unsigned long sz, gfp_t gfp) {
     return 0;
 }
 
-int mem_allocate(unsigned long addr) {
+/* Returns number of pages need to alloc.
+*/
+static unsigned long len_align(unsigned long *len) {
+    if (!len)
+		return -EINVAL;
+    
+    *len = PAGE_ALIGN(*len);
+    return *len / PAGE_SIZE;
+}
+
+int mem_allocate(unsigned long addr, unsigned long len) {
     struct mm_struct *mm;
     pgd_t *pgd;
     p4d_t *p4d;
@@ -31,155 +41,170 @@ int mem_allocate(unsigned long addr) {
     pmd_t *pmd;
     pte_t *pte;
     pte_t entry;
-    // unsigned long page_count;
+    unsigned long page_count;
     unsigned long pfn;
     phys_addr_t phys;
     int err;
 
     mm = current->mm;
 
-    // if (!len)
-	// 	return -EINVAL;
+    page_count = len_align(&len);
 
-    printk(KERN_INFO "MMD: before PGD.\n");
+    if (IS_ERR_VALUE(page_count)) {
+        return -EINVAL;
+    }
 
-    pgd = pgd_offset(mm, addr);
-    if (pgd_none(*pgd)) {
+    while (page_count--) {
+        printk(KERN_INFO "MMD: before PGD.\n");
+
+        pgd = pgd_offset(mm, addr);
+        if (pgd_none(*pgd)) {
+            err = kmalloc_phys(&phys, PAGE_SIZE, GFP_KERNEL);
+            if (err)
+                return err;
+
+            set_pgd(pgd, __pgd(phys | _PAGE_TABLE));
+        }
+
+        if (pgd_bad(*pgd))
+            return -EFAULT;
+
+        printk(KERN_INFO "MMD: before P4D.\n");
+
+        p4d = p4d_offset(pgd, addr);
+        if (p4d_none(*p4d)) {
+            printk(KERN_INFO "MMD: P4D none.\n");
+            err = kmalloc_phys(&phys, PAGE_SIZE, GFP_KERNEL);
+            if (err)
+                return err;
+
+            printk(KERN_INFO "MMD: before P4D set.\n");
+            
+            set_p4d(p4d, __p4d(phys | _PAGE_TABLE));
+        }
+
+        printk(KERN_INFO "MMD: after p4d none.\n");
+
+        if (p4d_bad(*p4d)) {
+            printk(KERN_INFO "MMD: P4D bad.\n");
+            return err;
+        }
+
+        printk(KERN_INFO "MMD: before PUD.\n");
+
+        pud = pud_offset(p4d, addr);
+        if (pud_none(*pud)) {
+            printk(KERN_INFO "MMD: PUD none.\n");
+            err = kmalloc_phys(&phys, PAGE_SIZE, GFP_KERNEL);
+            if (err)
+                return err;
+
+            printk(KERN_INFO "MMD: before set PUD.\n");
+            set_pud(pud, __pud(phys | _PAGE_TABLE));
+        }
+
+        printk(KERN_INFO "MMD: after PUD none.\n");
+
+        if (pud_bad(*pud)) {
+            printk(KERN_INFO "MMD: PUD bad.\n");
+            return -EFAULT;
+        }
+
+        printk(KERN_INFO "MMD: before PMD.\n");
+
+        pmd = pmd_offset(pud, addr);
+        if (pmd_none(*pmd)) {
+            err = kmalloc_phys(&phys, PAGE_SIZE, GFP_KERNEL);
+            if (err)
+                return err;
+
+            set_pmd(pmd, __pmd(phys | _PAGE_TABLE));
+        }
+
+        if (pmd_bad(*pmd))
+            return -EFAULT;
+
+        printk(KERN_INFO "MMD: before PTE.\n");
+
+        pte = pte_offset_kernel(pmd, addr);
+
+        printk(KERN_INFO "MMD: ptr_pte = %px.\n", &pte);
+
         err = kmalloc_phys(&phys, PAGE_SIZE, GFP_KERNEL);
         if (err)
             return err;
 
-        set_pgd(pgd, __pgd(phys | _PAGE_TABLE));
-    }
+        printk(KERN_INFO "MMD: before PTE set.\n");
 
-    if (pgd_bad(*pgd))
-        return -EFAULT;
+        set_pte(pte, __pte(phys | _PAGE_TABLE));
 
-    printk(KERN_INFO "MMD: before P4D.\n");
-
-    p4d = p4d_offset(pgd, addr);
-    if (p4d_none(*p4d)) {
-        printk(KERN_INFO "MMD: P4D none.\n");
-        err = kmalloc_phys(&phys, PAGE_SIZE, GFP_KERNEL);
-        if (err)
-            return err;
-
-        printk(KERN_INFO "MMD: before P4D set.\n");
-        
-        set_p4d(p4d, __p4d(phys | _PAGE_TABLE));
-    }
-
-    printk(KERN_INFO "MMD: after p4d none.\n");
-
-    if (p4d_bad(*p4d)) {
-        printk(KERN_INFO "MMD: P4D bad.\n");
-        return err;
-    }
-
-    printk(KERN_INFO "MMD: before PUD.\n");
-
-    pud = pud_offset(p4d, addr);
-    if (pud_none(*pud)) {
-        printk(KERN_INFO "MMD: PUD none.\n");
-        err = kmalloc_phys(&phys, PAGE_SIZE, GFP_KERNEL);
-        if (err)
-            return err;
-
-        printk(KERN_INFO "MMD: before set PUD.\n");
-        set_pud(pud, __pud(phys | _PAGE_TABLE));
-    }
-
-    printk(KERN_INFO "MMD: after PUD none.\n");
-
-    if (pud_bad(*pud)) {
-        printk(KERN_INFO "MMD: PUD bad.\n");
-        return -EFAULT;
-    }
-
-    printk(KERN_INFO "MMD: before PMD.\n");
-
-    pmd = pmd_offset(pud, addr);
-    if (pmd_none(*pmd)) {
-        err = kmalloc_phys(&phys, PAGE_SIZE, GFP_KERNEL);
-        if (err)
-            return err;
-
-        set_pmd(pmd, __pmd(phys | _PAGE_TABLE));
-    }
-
-    if (pmd_bad(*pmd))
-        return -EFAULT;
-
-    printk(KERN_INFO "MMD: before PTE.\n");
-
-    pte = pte_offset_kernel(pmd, addr);
-
-    printk(KERN_INFO "MMD: ptr_pte = %px.\n", &pte);
-
-    err = kmalloc_phys(&phys, PAGE_SIZE, GFP_KERNEL);
-    if (err)
-        return err;
-
-    printk(KERN_INFO "MMD: before PTE set.\n");
-
-    set_pte(pte, __pte(phys | _PAGE_TABLE));
-
-    // len = PAGE_ALIGN(len);
-    // page_count = len / PAGE_SIZE;
-
-    // while (page_count--) {
         pfn = PHYS_PFN(phys);
         entry = pfn_pte(pfn, PAGE_SHARED);
         set_pte_at(mm, addr, pte, entry);
-    // }
 
-    printk(KERN_INFO "MMD: PTE = 0x%lx\n", pte_val(*pte));
+        printk(KERN_INFO "MMD: PTE = 0x%lx\n", pte_val(*pte));
+
+        addr += PAGE_SIZE;
+    }
     
     return 0;
 }
 
-int mem_free(unsigned long addr) {
+int mem_free(unsigned long addr, unsigned long len) {
     struct mm_struct *mm;
     pgd_t *pgd;
     p4d_t *p4d;
     pud_t *pud;
     pmd_t *pmd;
     pte_t *pte;
+    unsigned long page_count;
     unsigned long pfn;
     unsigned long phys;
     void *virt;
 
     mm = current->mm;
 
-    pgd = pgd_offset(mm, addr);
-    if (pgd_none(*pgd) || pgd_bad(*pgd))
+    page_count = len_align(&len);
+
+    if (IS_ERR_VALUE(page_count)) {
         return -EINVAL;
+    }
 
-    p4d = p4d_offset(pgd, addr);
-    if (p4d_none(*p4d) || p4d_bad(*p4d))
-        return -EINVAL;
+    while (page_count--) {
+        pgd = pgd_offset(mm, addr);
+        if (pgd_none(*pgd) || pgd_bad(*pgd))
+            return -EINVAL;
 
-    pud = pud_offset(p4d, addr);
-    if (pud_none(*pud) || pud_bad(*pud))
-        return -EINVAL;
+        p4d = p4d_offset(pgd, addr);
+        if (p4d_none(*p4d) || p4d_bad(*p4d))
+            return -EINVAL;
 
-    pmd = pmd_offset(pud, addr);
-    if (pmd_none(*pmd) || pmd_bad(*pmd))
-        return -EINVAL;
+        pud = pud_offset(p4d, addr);
+        if (pud_none(*pud) || pud_bad(*pud))
+            return -EINVAL;
 
-    pte = pte_offset_kernel(pmd, addr);
+        pmd = pmd_offset(pud, addr);
+        if (pmd_none(*pmd) || pmd_bad(*pmd))
+            return -EINVAL;
 
-    if (pte_none(*pte))
-        return -EINVAL;
+        pte = pte_offset_kernel(pmd, addr);
 
-    pfn = pte_pfn(*pte);
-    phys = PFN_PHYS(pfn);
+        if (pte_none(*pte))
+            return -EINVAL;
 
-    virt = phys_to_virt(phys);
+        pfn = pte_pfn(*pte);
+        phys = PFN_PHYS(pfn);
 
-    pte_clear(mm, addr, pte);
-    __flush_tlb_all();
-    kfree(virt);
+        virt = phys_to_virt(phys);
+
+        pte_clear(mm, addr, pte);
+
+        /* Not very good but at first ok */
+        __flush_tlb_all();
+        kfree(virt);
+        
+        addr += PAGE_SIZE;
+    }
 
     return 0;
 }
