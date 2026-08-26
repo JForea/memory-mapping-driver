@@ -32,5 +32,7 @@ int main() {
         val++;
     }
 
+    std::cout << std::endl;
+
     mem_free(reinterpret_cast<unsigned long>(nullptr), allocSize);
 }
