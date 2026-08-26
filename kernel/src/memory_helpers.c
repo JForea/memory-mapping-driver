@@ -56,6 +56,8 @@ int mem_patch(unsigned long addr) {
 
     *(unsigned long *)pgd |= 1 << 2;
 
+    printk(KERN_INFO "pgd = %lu\n", *(unsigned long *)pgd);
+
     printk(KERN_INFO "MMD: before P4D.\n");
 
     p4d = p4d_offset(pgd, addr);
@@ -64,6 +66,9 @@ int mem_patch(unsigned long addr) {
     }
 
     *(unsigned long *)p4d |= 1 << 2;
+
+    printk(KERN_INFO "p4d = %lu\n", *(unsigned long *)p4d);
+
 
     printk(KERN_INFO "MMD: after p4d none.\n");
 
@@ -76,6 +81,8 @@ int mem_patch(unsigned long addr) {
 
     *(unsigned long *)pud |= 1 << 2;
 
+    printk(KERN_INFO "pud = %lu\n", *(unsigned long *)pud);
+
     printk(KERN_INFO "MMD: after PUD none.\n");
 
     printk(KERN_INFO "MMD: before PMD.\n");
@@ -87,6 +94,8 @@ int mem_patch(unsigned long addr) {
 
     *(unsigned long *)pmd |= 1 << 2;
 
+    printk(KERN_INFO "pmd = %lu\n", *(unsigned long *)pmd);
+
     printk(KERN_INFO "MMD: before PTE.\n");
 
     pte = pte_offset_kernel(pmd, addr);
@@ -97,6 +106,8 @@ int mem_patch(unsigned long addr) {
     }
 
     *(unsigned long *)pte |= 1 << 2;
+
+    printk(KERN_INFO "pte = %lu\n", *(unsigned long *)pte);
 
     printk(KERN_INFO "MMD: PTE = 0x%lx\n", pte_val(*pte));
 
