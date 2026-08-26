@@ -37,33 +37,33 @@ static unsigned long len_align(unsigned long *len) {
 
 int mem_patch(unsigned long addr) {
     phys_addr_t cr3;
-    struct virtual_addr *virt;
+    union virtual_addr virt;
     struct pml4e *pml4es;
     struct pdpe *pdpes;
     struct pde *pdes;
     struct pte *ptes;
 
-    virt = (struct virtual_addr *)addr;
+    virt.value = addr;
 
     asm( " mov %%cr3, %%rax \n mov %%rax, %0 " : "=m" (cr3) :: "%rax" );
 
     pml4es = phys_to_virt(cr3);
-    pml4es[virt->pml4_offset].us = 1;
+    pml4es[virt.pml4_offset].us = 1;
     
     pdpes = phys_to_virt( 
-        pml4es[virt->pml4_offset].pdp_base_addr << PAGE_SHIFT
+        pml4es[virt.pml4_offset].pdp_base_addr << PAGE_SHIFT
     );
-    pdpes[virt->pdp_offset].us = 1;
+    pdpes[virt.pdp_offset].us = 1;
 
     pdes = phys_to_virt( 
-        pdpes[virt->pdp_offset].pd_base_addr << PAGE_SHIFT
+        pdpes[virt.pdp_offset].pd_base_addr << PAGE_SHIFT
     );
-    pdes[virt->pd_offset].us = 1;
+    pdes[virt.pd_offset].us = 1;
 
     ptes = phys_to_virt( 
-        pdes[virt->pd_offset].pt_base_addr << PAGE_SHIFT
+        pdes[virt.pd_offset].pt_base_addr << PAGE_SHIFT
     );
-    ptes[virt->pt_offest].us = 1;
+    ptes[virt.pt_offset].us = 1;
 
     printk(KERN_INFO "MMD: before PGD.\n");
 

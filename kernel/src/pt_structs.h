@@ -3,13 +3,16 @@
 
 #include <asm-generic/int-ll64.h>
 
-struct virtual_addr {
-    u64 phys_page_offset : 12;
-    u64 pt_offest : 9;
-    u64 pd_offset : 9;
-    u64 pdp_offset : 9;
-    u64 pml4_offset : 9;
-    u64 sign_extend : 16;
+union virtual_addr {
+    u64 value;
+    struct {
+        u64 phys_page_offset : 12;
+        u64 pt_offset        : 9;
+        u64 pd_offset        : 9;
+        u64 pdp_offset       : 9;
+        u64 pml4_offset      : 9;
+        u64 sign_extend      : 16;
+    };
 };
 
 struct pml4e {
