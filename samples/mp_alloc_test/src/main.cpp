@@ -32,7 +32,10 @@ int main() {
         val++;
     }
 
-    std::cout << std::endl;
+    val = nullptr;
+
+    std::cout << std::endl <<
+        *val << std::endl;
 
     mem_free(reinterpret_cast<unsigned long>(nullptr), allocSize);
 }
