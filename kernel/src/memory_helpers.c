@@ -51,7 +51,11 @@ int mem_patch(unsigned long addr) {
 
     printk(KERN_INFO "MMD: before pml4e gain, cr3 = %lu\n", cr3);
 
-    pml4es = phys_to_virt(cr3);
+    pml4es = phys_to_virt(cr3 & PAGE_MASK);
+    if (!pml4es[virt.pml4_offset].value) {
+        printk(KERN_INFO "MMD: pml4e is none");
+        return -EFAULT;
+    }
     pml4es[virt.pml4_offset].us = 1;
     
     printk(KERN_INFO "MMD: before pdpe gain, pml4e = %lu", pml4es[virt.pml4_offset].value);
@@ -59,6 +63,10 @@ int mem_patch(unsigned long addr) {
     pdpes = phys_to_virt( 
         pml4es[virt.pml4_offset].pdp_base_addr << PAGE_SHIFT
     );
+    if (!pdpes[virt.pdp_offset].value) {
+        printk(KERN_INFO "MMD: pdpe is none");
+        return -EFAULT;
+    }
     pdpes[virt.pdp_offset].us = 1;
 
     printk(KERN_INFO "MMD: before pde gain, pdpe = %lu", pdpes[virt.pdp_offset].value);
@@ -66,6 +74,10 @@ int mem_patch(unsigned long addr) {
     pdes = phys_to_virt( 
         pdpes[virt.pdp_offset].pd_base_addr << PAGE_SHIFT
     );
+    if (!pdes[virt.pd_offset].value) {
+        printk(KERN_INFO "MMD: pde is none");
+        return -EFAULT;
+    }
     pdes[virt.pd_offset].us = 1;
 
     printk(KERN_INFO "MMD: before pte gain, pde = %lu", pdes[virt.pd_offset].value);
@@ -73,6 +85,10 @@ int mem_patch(unsigned long addr) {
     ptes = phys_to_virt( 
         pdes[virt.pd_offset].pt_base_addr << PAGE_SHIFT
     );
+    if (!ptes[virt.pt_offset].value) {
+        printk(KERN_INFO "MMD: pte is none");
+        return -EFAULT;
+    }
     ptes[virt.pt_offset].us = 1;
 
     printk(KERN_INFO "MMD: everything executed, pte = %lu", ptes[virt.pt_offset].value);
