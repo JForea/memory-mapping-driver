@@ -10,7 +10,7 @@
 #include <asm/io.h>
 #include <asm/tlbflush.h>
 
-static int kmalloc_phys(phys_addr_t *phys, unsigned long sz, gfp_t gfp) {
+static int kzalloc_phys(phys_addr_t *phys, unsigned long sz, gfp_t gfp) {
     void *virt;
     
     virt = kzalloc(sz, gfp);
@@ -46,9 +46,9 @@ static int patch_page_tables(union virtual_addr virt, phys_addr_t cr3) {
     printk(KERN_INFO "MMD: before pml4e gain, cr3 = %lu\n", cr3);
     
     pml4es = phys_to_virt(cr3);
-    if (!pml4es[virt.pml4_offset].value) {
+    if (!pml4es[virt.pml4_offset].p) {
         printk(KERN_INFO "MMD: pml4e is none");
-        err = kmalloc_phys(&phys, PAGE_SIZE, GFP_KERNEL);
+        err = kzalloc_phys(&phys, PAGE_SIZE, GFP_KERNEL);
         if (err)
             return err;
 
@@ -61,45 +61,48 @@ static int patch_page_tables(union virtual_addr virt, phys_addr_t cr3) {
     pdpes = phys_to_virt( 
         pml4es[virt.pml4_offset].pdp_base_addr << PAGE_SHIFT
     );
-    if (!pdpes[virt.pdp_offset].value) {
+    if (!pdpes[virt.pdp_offset].p) {
         printk(KERN_INFO "MMD: pdpe is none");
-        err = kmalloc_phys(&phys, PAGE_SIZE, GFP_KERNEL);
+        err = kzalloc_phys(&phys, PAGE_SIZE, GFP_KERNEL);
         if (err)
             return err;
 
         pdpes[virt.pdp_offset].value = phys | _PAGE_TABLE;
     }
     pdpes[virt.pdp_offset].us = 1;
+    pml4es[virt.pml4_offset].p = 1;
 
     printk(KERN_INFO "MMD: before pde gain, pdpe = %lu", pdpes[virt.pdp_offset].value);
 
     pdes = phys_to_virt( 
         pdpes[virt.pdp_offset].pd_base_addr << PAGE_SHIFT
     );
-    if (!pdes[virt.pd_offset].value) {
+    if (!pdes[virt.pd_offset].p) {
         printk(KERN_INFO "MMD: pde is none");
-        err = kmalloc_phys(&phys, PAGE_SIZE, GFP_KERNEL);
+        err = kzalloc_phys(&phys, PAGE_SIZE, GFP_KERNEL);
         if (err)
             return err;
 
         pdes[virt.pd_offset].value = phys | _PAGE_TABLE;
     }
     pdes[virt.pd_offset].us = 1;
+    pdpes[virt.pdp_offset].p = 1;
 
     printk(KERN_INFO "MMD: before pte gain, pde = %lu", pdes[virt.pd_offset].value);
 
     ptes = phys_to_virt( 
         pdes[virt.pd_offset].pt_base_addr << PAGE_SHIFT
     );
-    if (!ptes[virt.pt_offset].value) {
+    if (!ptes[virt.pt_offset].p) {
         printk(KERN_INFO "MMD: pte is none");
-        err = kmalloc_phys(&phys, PAGE_SIZE, GFP_KERNEL);
+        err = kzalloc_phys(&phys, PAGE_SIZE, GFP_KERNEL);
         if (err)
             return err;
 
         ptes[virt.pt_offset].value = phys | _PAGE_TABLE;
     }
     ptes[virt.pt_offset].us = 1;
+    pdes[virt.pd_offset].p = 1;
 
     printk(KERN_INFO "MMD: everything executed, pte = %lu", ptes[virt.pt_offset].value);
 
@@ -172,7 +175,7 @@ int mem_allocate(unsigned long addr, unsigned long len) {
 
         pgd = pgd_offset(mm, addr);
         if (pgd_none(*pgd)) {
-            err = kmalloc_phys(&phys, PAGE_SIZE, GFP_KERNEL);
+            err = kzalloc_phys(&phys, PAGE_SIZE, GFP_KERNEL);
             if (err)
                 return err;
 
@@ -189,7 +192,7 @@ int mem_allocate(unsigned long addr, unsigned long len) {
         p4d = p4d_offset(pgd, addr);
         if (p4d_none(*p4d)) {
             printk(KERN_INFO "MMD: P4D none.\n");
-            err = kmalloc_phys(&phys, PAGE_SIZE, GFP_KERNEL);
+            err = kzalloc_phys(&phys, PAGE_SIZE, GFP_KERNEL);
             if (err)
                 return err;
 
@@ -212,7 +215,7 @@ int mem_allocate(unsigned long addr, unsigned long len) {
         pud = pud_offset(p4d, addr);
         if (pud_none(*pud)) {
             printk(KERN_INFO "MMD: PUD none.\n");
-            err = kmalloc_phys(&phys, PAGE_SIZE, GFP_KERNEL);
+            err = kzalloc_phys(&phys, PAGE_SIZE, GFP_KERNEL);
             if (err)
                 return err;
 
@@ -233,7 +236,7 @@ int mem_allocate(unsigned long addr, unsigned long len) {
 
         pmd = pmd_offset(pud, addr);
         if (pmd_none(*pmd)) {
-            err = kmalloc_phys(&phys, PAGE_SIZE, GFP_KERNEL);
+            err = kzalloc_phys(&phys, PAGE_SIZE, GFP_KERNEL);
             if (err)
                 return err;
 
@@ -251,7 +254,7 @@ int mem_allocate(unsigned long addr, unsigned long len) {
 
         printk(KERN_INFO "MMD: ptr_pte = %px.\n", &pte);
         if (pte_none(*pte)) {
-            err = kmalloc_phys(&phys, PAGE_SIZE, GFP_KERNEL);
+            err = kzalloc_phys(&phys, PAGE_SIZE, GFP_KERNEL);
             if (err)
                 return err;
 
