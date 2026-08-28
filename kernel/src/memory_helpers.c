@@ -33,6 +33,8 @@ static int kmalloc_phys(phys_addr_t *phys, unsigned long sz, gfp_t gfp) {
         return -ENOMEM;
     }
 
+    *(unsigned long *)virt = 0x12345678;
+
     *phys = virt_to_phys(virt);
 
     printk("MMD: memory allocated ptr=%px phys=%llx first=%02x %02x %02x %02x\n",
