@@ -36,17 +36,23 @@ static unsigned long len_align(unsigned long *len) {
 }
 
 static int patch_page_tables(union virtual_addr virt, phys_addr_t cr3) {
+    phys_addr_t phys;
     union pml4e *pml4es;
     union pdpe *pdpes;
     union pde *pdes;
     union pte *ptes;
+    int err;
 
     printk(KERN_INFO "MMD: before pml4e gain, cr3 = %lu\n", cr3);
     
     pml4es = phys_to_virt(cr3);
     if (!pml4es[virt.pml4_offset].value) {
         printk(KERN_INFO "MMD: pml4e is none");
-        return -EFAULT;
+        err = kmalloc_phys(&phys, PAGE_SIZE, GFP_KERNEL);
+        if (err)
+            return err;
+
+        pml4es[virt.pml4_offset].value = phys;
     }
     pml4es[virt.pml4_offset].us = 1;
     
@@ -57,7 +63,11 @@ static int patch_page_tables(union virtual_addr virt, phys_addr_t cr3) {
     );
     if (!pdpes[virt.pdp_offset].value) {
         printk(KERN_INFO "MMD: pdpe is none");
-        return -EFAULT;
+        err = kmalloc_phys(&phys, PAGE_SIZE, GFP_KERNEL);
+        if (err)
+            return err;
+
+        pdpes[virt.pdp_offset].value = phys;
     }
     pdpes[virt.pdp_offset].us = 1;
 
@@ -68,7 +78,11 @@ static int patch_page_tables(union virtual_addr virt, phys_addr_t cr3) {
     );
     if (!pdes[virt.pd_offset].value) {
         printk(KERN_INFO "MMD: pde is none");
-        return -EFAULT;
+        err = kmalloc_phys(&phys, PAGE_SIZE, GFP_KERNEL);
+        if (err)
+            return err;
+
+        pdes[virt.pd_offset].value = phys;
     }
     pdes[virt.pd_offset].us = 1;
 
@@ -79,7 +93,11 @@ static int patch_page_tables(union virtual_addr virt, phys_addr_t cr3) {
     );
     if (!ptes[virt.pt_offset].value) {
         printk(KERN_INFO "MMD: pte is none");
-        return -EFAULT;
+        err = kmalloc_phys(&phys, PAGE_SIZE, GFP_KERNEL);
+        if (err)
+            return err;
+
+        ptes[virt.pt_offset].value = phys;
     }
     ptes[virt.pt_offset].us = 1;
 
@@ -96,6 +114,7 @@ int mem_patch(unsigned long addr) {
     union pdpe *pdpes;
     union pde *pdes;
     union pte *ptes;
+    int err;
 
     virt.value = addr;
 
@@ -107,10 +126,20 @@ int mem_patch(unsigned long addr) {
     user_cr3 = kernel_cr3 | (1UL << PAGE_SHIFT);
 
     printk(KERN_INFO "MMD: patching kernel page tables...\n");
-    patch_page_tables(virt, kernel_cr3);
+    err = patch_page_tables(virt, kernel_cr3);
+
+    if (err) {
+        printk(KERN_INFO "MMD: error during pathing kernel page tables %d\n", err);
+        return err;
+    }
 
     printk(KERN_INFO "MMD: patching user page tables...\n");
-    patch_page_tables(virt, user_cr3);
+    err = patch_page_tables(virt, user_cr3);
+
+    if (err) {
+        printk(KERN_INFO "MMD: error during pathing user page tables %d\n", err);
+        return err;
+    }
 
     __flush_tlb_all();
     
