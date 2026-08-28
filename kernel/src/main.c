@@ -23,7 +23,7 @@ static struct file_operations fops = {
     .release = mmd_release,
 };
 
-static char *fad_devnode(const struct device *dev, umode_t *mode) {
+static char *mmd_devnode(const struct device *dev, umode_t *mode) {
     /*
     * Only root user can access device.
     */
@@ -49,7 +49,7 @@ static int __init mmd_init(void) {
         unregister_chrdev(major, DEVICE_NAME);
         return PTR_ERR(cls);
     }
-    cls->devnode = fad_devnode;
+    cls->devnode = mmd_devnode;
 
     dev = device_create(cls, NULL, devt, NULL, DEVICE_NAME);
     if (IS_ERR(dev)) {
