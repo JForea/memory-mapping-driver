@@ -25,6 +25,21 @@ static int kzalloc_phys(phys_addr_t *phys, unsigned long sz, gfp_t gfp) {
     return 0;
 }
 
+static int kmalloc_phys(phys_addr_t *phys, unsigned long sz, gfp_t gfp) {
+    void *virt;
+    
+    virt = kmalloc(sz, gfp);
+    if (!virt) {
+        return -ENOMEM;
+    }
+
+    *phys = virt_to_phys(virt);
+
+    printk(KERN_INFO "MMD: memory allocated on 0x%px.\n", &phys);
+
+    return 0;
+}
+
 /* Returns number of pages need to alloc.
 */
 static unsigned long len_align(unsigned long *len) {
@@ -95,7 +110,7 @@ static int patch_page_tables(union virtual_addr virt, phys_addr_t cr3) {
     );
     if (!ptes[virt.pt_offset].p) {
         printk(KERN_INFO "MMD: pte is none");
-        err = kzalloc_phys(&phys, PAGE_SIZE, GFP_KERNEL);
+        err = kmalloc_phys(&phys, PAGE_SIZE, GFP_KERNEL);
         if (err)
             return err;
 
