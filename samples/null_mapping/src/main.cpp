@@ -3,7 +3,7 @@
 #include <mmd/mmd.h>
 
 int main() {
-    unsigned long *val = (unsigned long *)0xffffffffc0287010;
+    unsigned long *val = (unsigned long *)0xffffffffc0287000;
     int err = mem_allocate(reinterpret_cast<unsigned long>(val), sizeof(int));
     if (err < 0) {
         std::cout << "Something went wrong: " << err << '\n';
