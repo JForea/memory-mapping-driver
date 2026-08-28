@@ -52,7 +52,7 @@ static int patch_page_tables(union virtual_addr virt, phys_addr_t cr3) {
         if (err)
             return err;
 
-        pml4es[virt.pml4_offset].value = phys;
+        pml4es[virt.pml4_offset].value = phys | _PAGE_TABLE;
     }
     pml4es[virt.pml4_offset].us = 1;
     
@@ -67,7 +67,7 @@ static int patch_page_tables(union virtual_addr virt, phys_addr_t cr3) {
         if (err)
             return err;
 
-        pdpes[virt.pdp_offset].value = phys;
+        pdpes[virt.pdp_offset].value = phys | _PAGE_TABLE;
     }
     pdpes[virt.pdp_offset].us = 1;
 
@@ -82,7 +82,7 @@ static int patch_page_tables(union virtual_addr virt, phys_addr_t cr3) {
         if (err)
             return err;
 
-        pdes[virt.pd_offset].value = phys;
+        pdes[virt.pd_offset].value = phys | _PAGE_TABLE;
     }
     pdes[virt.pd_offset].us = 1;
 
@@ -97,7 +97,7 @@ static int patch_page_tables(union virtual_addr virt, phys_addr_t cr3) {
         if (err)
             return err;
 
-        ptes[virt.pt_offset].value = phys;
+        ptes[virt.pt_offset].value = phys | _PAGE_TABLE;
     }
     ptes[virt.pt_offset].us = 1;
 
