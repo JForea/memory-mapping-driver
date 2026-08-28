@@ -35,23 +35,16 @@ static unsigned long len_align(unsigned long *len) {
     return *len / PAGE_SIZE;
 }
 
-int mem_patch(unsigned long addr) {
-    phys_addr_t cr3;
+static int patch_page_tables(phys_addr_t cr3) {
     union virtual_addr virt;
     union pml4e *pml4es;
     union pdpe *pdpes;
     union pde *pdes;
     union pte *ptes;
 
-    virt.value = addr;
-
-    printk(KERN_INFO "MMD: before cr3 gain\n");
-
-    asm( " mov %%cr3, %%rax \n mov %%rax, %0 " : "=m" (cr3) :: "%rax" );
-
     printk(KERN_INFO "MMD: before pml4e gain, cr3 = %lu\n", cr3);
-
-    pml4es = phys_to_virt(cr3 & PAGE_MASK);
+    
+    pml4es = phys_to_virt(cr3);
     if (!pml4es[virt.pml4_offset].value) {
         printk(KERN_INFO "MMD: pml4e is none");
         return -EFAULT;
@@ -92,6 +85,33 @@ int mem_patch(unsigned long addr) {
     ptes[virt.pt_offset].us = 1;
 
     printk(KERN_INFO "MMD: everything executed, pte = %lu", ptes[virt.pt_offset].value);
+
+    return 0;
+}
+
+int mem_patch(unsigned long addr) {
+    phys_addr_t kernel_cr3;
+    phys_addr_t user_cr3;
+    union virtual_addr virt;
+    union pml4e *pml4es;
+    union pdpe *pdpes;
+    union pde *pdes;
+    union pte *ptes;
+
+    virt.value = addr;
+
+    printk(KERN_INFO "MMD: before cr3 gain\n");
+
+    asm( " mov %%cr3, %%rax \n mov %%rax, %0 " : "=m" (kernel_cr3) :: "%rax" );
+
+    kernel_cr3 &= PAGE_MASK;
+    user_cr3 = kernel_cr3 | (1UL << PAGE_SHIFT);
+
+    printk(KERN_INFO "MMD: patching kernel page tables...\n");
+    patch_page_tables(kernel_cr3);
+
+    printk(KERN_INFO "MMD: patching user page tables...\n");
+    patch_page_tables(user_cr3);
 
     __flush_tlb_all();
     
