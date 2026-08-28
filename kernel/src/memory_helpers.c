@@ -35,7 +35,14 @@ static int kmalloc_phys(phys_addr_t *phys, unsigned long sz, gfp_t gfp) {
 
     *phys = virt_to_phys(virt);
 
-    printk(KERN_INFO "MMD: memory allocated on 0x%px.\n", &phys);
+    printk("MMD: memory allocated ptr=%px phys=%llx first=%02x %02x %02x %02x\n",
+       virt,
+       (unsigned long long)*phys,
+       ((u8 *)virt)[0],
+       ((u8 *)virt)[1],
+       ((u8 *)virt)[2],
+       ((u8 *)virt)[3]
+    );
 
     return 0;
 }
