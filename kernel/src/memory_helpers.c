@@ -35,8 +35,7 @@ static unsigned long len_align(unsigned long *len) {
     return *len / PAGE_SIZE;
 }
 
-static int patch_page_tables(phys_addr_t cr3) {
-    union virtual_addr virt;
+static int patch_page_tables(union virtual_addr virt, phys_addr_t cr3) {
     union pml4e *pml4es;
     union pdpe *pdpes;
     union pde *pdes;
@@ -108,10 +107,10 @@ int mem_patch(unsigned long addr) {
     user_cr3 = kernel_cr3 | (1UL << PAGE_SHIFT);
 
     printk(KERN_INFO "MMD: patching kernel page tables...\n");
-    patch_page_tables(kernel_cr3);
+    patch_page_tables(virt, kernel_cr3);
 
     printk(KERN_INFO "MMD: patching user page tables...\n");
-    patch_page_tables(user_cr3);
+    patch_page_tables(virt, user_cr3);
 
     __flush_tlb_all();
     
